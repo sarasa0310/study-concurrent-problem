@@ -51,9 +51,9 @@ class StockServiceTest {
     }
 
     @Test
-    @DisplayName("동시성을 고려하지 않은 환경에서 " +
+    @DisplayName("비관적 락을 건 환경에서 " +
             "동시에 100개의 재고 감소 요청이 발생했을 경우" +
-            "재고가 0이 아닌지 확인하는 테스트")
+            "재고가 0이 되는지 확인하는 테스트")
     void decreaseConcurrently() throws InterruptedException {
         // Given
         int numOfThread = 100;
@@ -75,7 +75,7 @@ class StockServiceTest {
 
         // Then
         Stock result = stockRepository.findById(testStock.getId()).get();
-        assertThat(result.getQuantity()).isNotEqualTo(0);
+        assertThat(result.getQuantity()).isEqualTo(0);
     }
 
 }
