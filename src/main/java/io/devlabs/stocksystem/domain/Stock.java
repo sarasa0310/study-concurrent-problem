@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Entity
+@Getter
 @NoArgsConstructor
 public class Stock {
 
@@ -15,7 +16,6 @@ public class Stock {
 
     private Long productId;
 
-    @Getter
     private int quantity;
 
     public Stock(Long productId, int quantity) {
