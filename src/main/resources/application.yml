@@ -8,6 +8,9 @@ spring:
     url: jdbc:mysql://localhost:33306/stock_example
     username: root
     password: 1234
+  redis:
+    host: localhost
+    port: 36379
 
 logging:
   level:
