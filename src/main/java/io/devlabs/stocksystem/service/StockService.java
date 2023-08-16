@@ -16,7 +16,7 @@ public class StockService {
     private final StockRepository stockRepository;
 
     public void decrease(Long stockId, int quantity) {
-        Stock stock = stockRepository.findByIdWithPessimisticLock(stockId)
+        Stock stock = stockRepository.findByIdWithOptimisticLock(stockId)
                 .orElseThrow(() -> new EntityNotFoundException("재고 조회에 실패했습니다."));
 
         stock.decrease(quantity);

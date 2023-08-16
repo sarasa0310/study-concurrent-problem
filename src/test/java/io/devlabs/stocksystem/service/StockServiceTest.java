@@ -1,11 +1,9 @@
 package io.devlabs.stocksystem.service;
 
 import io.devlabs.stocksystem.domain.Stock;
+import io.devlabs.stocksystem.facade.OptimisticLockStockFacade;
 import io.devlabs.stocksystem.repository.StockRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -23,6 +21,9 @@ class StockServiceTest {
 
     @Autowired
     private StockRepository stockRepository;
+
+    @Autowired
+    private OptimisticLockStockFacade optimisticLockStockFacade;
 
     private Stock testStock;
 
@@ -51,6 +52,7 @@ class StockServiceTest {
     }
 
     @Test
+    @Disabled
     @DisplayName("비관적 락을 건 환경에서 " +
             "동시에 100개의 재고 감소 요청이 발생했을 경우" +
             "재고가 0이 되는지 확인하는 테스트")
@@ -65,6 +67,36 @@ class StockServiceTest {
             executorService.submit(() -> {
                 try {
                     stockService.decrease(testStock.getId(), 1);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        // Then
+        Stock result = stockRepository.findById(testStock.getId()).get();
+        assertThat(result.getQuantity()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("낙관적 락을 건 환경에서 " +
+            "동시에 100개의 재고 감소 요청이 발생했을 경우" +
+            "재고가 0이 되는지 확인하는 테스트")
+    void decreaseConcurrentlyWithOptimisticLock() throws InterruptedException {
+        // Given
+        int numOfThread = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(numOfThread);
+        CountDownLatch latch = new CountDownLatch(numOfThread);
+
+        // When
+        for (int i = 0; i < numOfThread; i++) {
+            executorService.submit(() -> {
+                try {
+                    optimisticLockStockFacade.decrease(testStock.getId(), 1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Optimistic Lock Failed");
                 } finally {
                     latch.countDown();
                 }
